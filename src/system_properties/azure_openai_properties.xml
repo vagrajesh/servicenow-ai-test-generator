@@ -1,0 +1,8 @@
+| Name | Type | Value | Description |
+|------|------|-------|-------------|
+| `azure.openai.endpoint` | String | (your Azure endpoint) | Azure OpenAI endpoint URL |
+| `azure.openai.api.key` | Password | (your API key) | API key (encrypted) |
+| `azure.openai.deployment.name` | String | `gpt-4` | Deployment name |
+| `azure.openai.api.version` | String | `2024-02-15-preview` | API version |
+| `azure.openai.timeout` | Integer | `60000` | Timeout in milliseconds |
+| `azure.openai.test.case.count` | Integer | `5` | Number of test cases to generate |
