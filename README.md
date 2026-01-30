@@ -45,48 +45,50 @@ Native integration with ServiceNow Test Management 2.0
 ✅ Validation - Pre-generation story validation
 ✅ Cost Tracking - Monitor API usage and costs
 
-
-🏗️ Architecture
 ┌─────────────┐
 │  QA User    │
 └──────┬──────┘
        │ Clicks "Generate AI Test Cases"
        ▼
-┌──────────────────────────────────────┐
-│     ServiceNow Instance              │
-│                                      │
+┌─────────────────────────────────────┐
+│  ServiceNow Platform                │
 │  ┌────────────────────────────────┐ │
-│  │  AzureOpenAITestGenerator      │ │
-│  │  (Script Include)              │ │
-│  └────────────┬───────────────────┘ │
-│               │                     │
-│               │ HTTPS               │
-│               ▼                     │
-└───────────────────────────────────────┘
-                │
-    ════════════╪════════════
-                │  Internet
-    ════════════╪════════════
-                │
-                ▼
-┌───────────────────────────────────────┐
-│     Azure OpenAI Service              │
-│                                       │
-│  ┌────────────────────────────────┐  │
-│  │  GPT-4 Model                   │  │
-│  │  Generates Test Cases          │  │
-│  └────────────────────────────────┘  │
-└───────────────────────────────────────┘
-                │
-                │ Returns JSON
-                ▼
-┌───────────────────────────────────────┐
-│     ServiceNow Database               │
-│                                       │
-│  • sn_test_management_test            │
-│  • sn_test_management_test_version    │
-│  • sn_test_management_step            │
-└───────────────────────────────────────┘
+│  │ UI Action (rm_story)           │ │
+│  └────────┬───────────────────────┘ │
+│           ▼                          │
+│  ┌────────────────────────────────┐ │
+│  │ AzureOpenAITestGenerator       │ │
+│  │ • Validation                   │ │
+│  │ • Prompt Engineering           │ │
+│  │ • API Communication            │ │
+│  └────────┬───────────────────────┘ │
+│           ▼                          │
+│  ┌────────────────────────────────┐ │
+│  │ TestManagementUtils            │ │
+│  │ • Test Creation                │ │
+│  │ • M2M Linking                  │ │
+│  │ • Data Validation              │ │
+│  └────────┬───────────────────────┘ │
+└───────────┼─────────────────────────┘
+            │
+            ▼ HTTPS REST API
+┌─────────────────────────────────────┐
+│  Azure OpenAI (GPT-4)               │
+│  • Analyzes user story              │
+│  • Generates test cases             │
+│  • Returns JSON response            │
+└───────────┬─────────────────────────┘
+            │
+            ▼
+┌─────────────────────────────────────┐
+│  ServiceNow Database                │
+│  • sn_test_management_test          │
+│  • sn_test_management_test_version  │
+│  • sn_test_management_step          │
+│  • sn_test_management_m2m_task_test │
+│  • u_ai_test_generation_log         │
+└─────────────────────────────────────┘
+
 Tech Stack:
 
 Platform: ServiceNow (San Diego+)

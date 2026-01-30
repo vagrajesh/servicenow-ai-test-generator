@@ -1,97 +1,122 @@
-/**
- * Script Include: AITestGenerationValidator
- * Description: Validates user stories before AI test generation
- * Version: 1.0
- */
-
 var AITestGenerationValidator = Class.create();
 AITestGenerationValidator.prototype = {
+    
     initialize: function() {
         this.LOG_PREFIX = 'AITestGenerationValidator';
     },
-
+    
     /**
-     * Validate if story is ready for test generation
-     * @param {GlideRecord} storyGr - User story GlideRecord
-     * @returns {Object} - Validation result
+     * Validate if a story is ready for test generation
+     * @param {GlideRecord} storyGr - User story GlideRecord or object
+     * @returns {Object} - {valid: boolean, errors: [], warnings: []}
      */
     validateStory: function(storyGr) {
         var errors = [];
         var warnings = [];
         
-        // Check if story exists
-        if (!storyGr || !storyGr.isValidRecord()) {
+        try {
+            // Required: Short description (title)
+            var shortDesc = '';
+            if (typeof storyGr.getValue === 'function') {
+                shortDesc = storyGr.getValue('short_description') || '';
+            } else {
+                shortDesc = storyGr.short_description || '';
+            }
+            
+            if (!shortDesc || shortDesc.trim() === '') {
+                errors.push('Story must have a title (short description)');
+            }
+            
+            // Recommended: Description
+            var description = '';
+            if (typeof storyGr.getValue === 'function') {
+                description = storyGr.getValue('description') || '';
+            } else {
+                description = storyGr.description || '';
+            }
+            
+            if (!description || description.trim() === '') {
+                warnings.push('Story description is empty. AI will generate generic tests.');
+            } else if (description.length < 50) {
+                warnings.push('Story description is very short (' + description.length + ' chars). Consider adding more detail for better test generation.');
+            } else if (description.length > 5000) {
+                warnings.push('Story description is very long (' + description.length + ' chars). This may hit token limits.');
+            }
+            
+            // Recommended: Acceptance criteria
+            var acceptanceCriteria = '';
+            if (typeof storyGr.getValue === 'function') {
+                acceptanceCriteria = storyGr.getValue('acceptance_criteria') || '';
+            } else {
+                acceptanceCriteria = storyGr.acceptance_criteria || '';
+            }
+            
+            if (!acceptanceCriteria || acceptanceCriteria.trim() === '') {
+                warnings.push('Story has no acceptance criteria. Tests will be based on description only.');
+            }
+            
+            // Check state
+            var state = '';
+            if (typeof storyGr.getValue === 'function') {
+                state = storyGr.getValue('state') || '';
+            } else {
+                state = storyGr.state || '';
+            }
+            
+            if (state === '1' || state === 'draft') {
+                warnings.push('Story is in Draft state. Consider moving to Work in Progress before generating tests.');
+            }
+            
+            // Log validation results
+            if (errors.length > 0) {
+                gs.warn(this.LOG_PREFIX + ': Validation failed: ' + errors.join(', '));
+            }
+            
+            if (warnings.length > 0) {
+                gs.info(this.LOG_PREFIX + ': Validation warnings: ' + warnings.join(', '));
+            }
+            
+            return {
+                valid: errors.length === 0,
+                errors: errors,
+                warnings: warnings
+            };
+            
+        } catch (e) {
+            gs.error(this.LOG_PREFIX + '.validateStory: ' + e);
             return {
                 valid: false,
-                errors: ['Invalid user story record'],
+                errors: ['Exception during validation: ' + e],
                 warnings: []
             };
         }
-        
-        // Required: Short description (title)
-        if (!storyGr.short_description || storyGr.short_description.toString().trim() === '') {
-            errors.push('Story must have a title (short description)');
-        }
-        
-        // Recommended: Description
-        if (!storyGr.description || storyGr.description.toString().trim() === '') {
-            warnings.push('Story description is empty - AI may generate less accurate test cases');
-        }
-        
-        // Recommended: Acceptance criteria
-        if (!storyGr.acceptance_criteria || storyGr.acceptance_criteria.toString().trim() === '') {
-            warnings.push('Acceptance criteria is empty - AI may generate generic test cases');
-        }
-        
-        // Check description length (too short)
-        var descLength = storyGr.description ? storyGr.description.toString().length : 0;
-        if (descLength > 0 && descLength < 50) {
-            warnings.push('Story description is very short (' + descLength + ' chars) - consider adding more details');
-        }
-        
-        // Check if description is too long (API limits)
-        if (descLength > 5000) {
-            warnings.push('Story description is very long (' + descLength + ' chars) - may hit API token limits');
-        }
-        
-        // Check state (optional - adjust based on your workflow)
-        var state = storyGr.state.toString();
-        if (state === '-1' || state === '1') { // Draft or Awaiting Approval
-            warnings.push('Story is in ' + storyGr.state.getDisplayValue() + ' state - consider moving to active state first');
-        }
-        
-        return {
-            valid: errors.length === 0,
-            errors: errors,
-            warnings: warnings
-        };
     },
-
+    
     /**
-     * Get validation summary message
-     * @param {Object} validation - Validation result
-     * @returns {String} - Summary message
+     * Get a formatted validation message
+     * @param {Object} validation - Validation result object
+     * @returns {String} - Formatted message
      */
     getValidationMessage: function(validation) {
-        var msg = '';
+        var message = '';
         
         if (!validation.valid) {
-            msg = 'Validation failed:\n';
+            message = 'Validation Errors:\n';
             for (var i = 0; i < validation.errors.length; i++) {
-                msg += '  • ' + validation.errors[i] + '\n';
+                message += '  • ' + validation.errors[i] + '\n';
             }
         }
         
-        if (validation.warnings.length > 0) {
-            if (msg) msg += '\n';
-            msg += 'Warnings:\n';
+        if (validation.warnings && validation.warnings.length > 0) {
+            if (message) message += '\n';
+            message += 'Warnings:\n';
             for (var j = 0; j < validation.warnings.length; j++) {
-                msg += '  ⚠ ' + validation.warnings[j] + '\n';
+                message += '  • ' + validation.warnings[j] + '\n';
             }
         }
         
-        return msg;
+        return message;
     },
-
+    
     type: 'AITestGenerationValidator'
 };
