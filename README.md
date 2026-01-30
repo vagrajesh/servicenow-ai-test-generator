@@ -92,7 +92,7 @@ Native integration with ServiceNow Test Management 2.0
 Tech Stack:
 
 Platform: ServiceNow (San Diego+)
-AI Service: Azure OpenAI (GPT-4 / GPT-3.5-Turbo)
+AI Service: Azure OpenAI
 Language: JavaScript (Server-side)
 Integration: REST API (HTTPS)
 Plugins Required: Test Management 2.0, Agile Development 2.0
